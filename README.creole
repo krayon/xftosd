@@ -1,0 +1,5 @@
+= XOSD =
+
+This is an unofficial mirror of XOSD from:
+    https://svn.code.sf.net/p/libxosd/code
+
