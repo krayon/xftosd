@@ -17,7 +17,7 @@
 .el .ne 3
 .IP "\\$1" \\$2
 ..
-.TH "XOSD_SET_BAR_LENGTH" 3xosd "" "" ""
+.TH "XOSD_SET_BAR_LENGTH" 3 "" "" ""
 .SH NAME
 xosd_set_bar_length \- Change the length of the percentage bar or slider
 .SH "SYNOPSIS"
@@ -44,12 +44,12 @@ The XOSD window to alter.
 
 .TP
 \fIdisplayPercentage\fR
-The percentage of the display to be used up by the slider or percentage bar, as an interger between 0 and 100. Setting \fIdisplayPercentage\fR to -1 reverts to the default behaviour.
+The percentage of the display to be used up by the slider or percentage bar, as an interger between 0 and 100. Setting \fIdisplayPercentage\fR to \-1 reverts to the default behaviour.
 
 .SH "RETURN VALUE"
 
 .PP
-On success, a zero is returned. On error, -1 is returned and \fIxosd_error\fR is set to indicate the reason for the error.
+On success, a zero is returned. On error, \-1 is returned and \fIxosd_error\fR is set to indicate the reason for the error.
 
 .SH "ENVIRONMENT"
 
@@ -72,5 +72,4 @@ This document was written by Michael JasonSmith.
 .SH "SEE ALSO"
 
 .PP
- \fBxosd_create\fR(3xosd), \fBxosd_display\fR(3xosd).
-
+ \fBxosd_create\fR(3), \fBxosd_display\fR(3).

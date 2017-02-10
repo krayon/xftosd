@@ -1,5 +1,5 @@
 .\" Hey Emacs! This file is -*- nroff -*- source.
-.TH xosd_hide 3xosd "2002-06-25" "X OSD Library"
+.TH xosd_hide 3 "2002-06-25" "X OSD Library"
 .SH NAME
 xosd_hide \- hide the XOSD window
 .SH SYNOPSIS
@@ -13,11 +13,11 @@ hides (unmaps) the
 .I xosd
 window.
 Call 
-.BI xosd_show (3xosd)
+.BR xosd_show (3)
 to make the window visible again.
 
 When 
-.BI xosd_display (3xosd)
+.BI xosd_display (3)
 is called data will be shown until the pre-set time has
 elapsed.
 By calling
@@ -30,7 +30,6 @@ The on-screen display object to act on.
 On success, a zero is returned.
 On error, \-1 is returned.
 .SH "SEE ALSO"
-.BR xosd_init (3xosd),
-.BR xosd_display (3xosd),
-.BR xosd_show (3xosd)
-
+.BR xosd_init (3),
+.BR xosd_display (3),
+.BR xosd_show (3).

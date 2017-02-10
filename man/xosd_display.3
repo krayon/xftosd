@@ -17,7 +17,7 @@
 .el .ne 3
 .IP "\\$1" \\$2
 ..
-.TH "XOSD_DISPLAY" 3xosd "" "" ""
+.TH "XOSD_DISPLAY" 3 "" "" ""
 .SH NAME
 xosd_display \- Display data to an XOSD window
 .SH "SYNOPSIS"
@@ -37,7 +37,7 @@ int\ \fBxosd_display\fR\ (xosd\ *\fIosd\fR, int\ \fIline\fR, xosd_command\ \fIco
 \fBxosd_display\fR displays either a string, a percentage bar (like a progress bar) or a slider on an X display. The data is displayed in a borderless shaped-window, so it appears to float on top of the other windows, like the on-screen displays found in many televisions. Users cannot interact with the display in any way.
 
 .PP
-The data is displayed until the timeout limit, set by calling \fBxosd_set_timeout\fR(3xosd), is reached, but \fBxosd_display\fR returns immediately. If blocking is required \fBxosd_wait_until_no_display\fR(3xosd) should be called after \fBxosd_display\fR. A window that is displaying data can be hidden by calling \fBxosd_hide\fR(3xosd).
+The data is displayed until the timeout limit, set by calling \fBxosd_set_timeout\fR(3), is reached, but \fBxosd_display\fR returns immediately. If blocking is required \fBxosd_wait_until_no_display\fR(3) should be called after \fBxosd_display\fR. A window that is displaying data can be hidden by calling \fBxosd_hide\fR(3).
 
 .PP
 The type of data displayed is determined by the \fIcommand\fR argument. There are two types of data that can be displayed: text or integers.
@@ -60,7 +60,7 @@ The XOSD window to use as the display.
 
 .TP
 \fIline\fR
-The line of the display to change. The value of \fIline\fR must be less than \fInumber_lines\fR, set in the call to \fBxosd_create\fR(3xosd).
+The line of the display to change. The value of \fIline\fR must be less than \fInumber_lines\fR, set in the call to \fBxosd_create\fR(3).
 
 .TP
 \fIcommand\fR
@@ -72,7 +72,7 @@ One of \fBXOSD_percentage\fR, \fBXOSD_slider\fR or \fBXOSD_string\fR. If the val
 If the \fIcommand\fR is either \fBXOSD_percentage\fR or \fBXOSD_slider\fR then the integer value of the bar or slider is returned (between 1 and 100). For \fBXOSD_string\fR and \fBXOSD_printf\fR the number of characters written to the display is returned.
 
 .PP
-On error -1 is returned and \fIxosd_error\fR is set to indicate the reason for the error.
+On error \-1 is returned and \fIxosd_error\fR is set to indicate the reason for the error.
 
 .SH "ENVIRONMENT"
 
@@ -103,5 +103,4 @@ Bug reports can be files on http://sourceforge.net/projects/libxosd/.
 .SH "SEE ALSO"
 
 .PP
- \fBxosd_create\fR(3xosd), \fBxosd_set_timeout\fR(3xosd), \fBxosd_wait_until_no_display\fR(3xosd), \fBxosd_hide\fR(3xosd), \fBprintf\fR(3) 
-
+ \fBxosd_create\fR(3), \fBxosd_set_timeout\fR(3), \fBxosd_wait_until_no_display\fR(3), \fBxosd_hide\fR(3), \fBprintf\fR(3).

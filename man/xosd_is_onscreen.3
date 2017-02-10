@@ -17,7 +17,7 @@
 .el .ne 3
 .IP "\\$1" \\$2
 ..
-.TH "XOSD_IS_ONSCREEN" 3xosd "" "" ""
+.TH "XOSD_IS_ONSCREEN" 3 "" "" ""
 .SH NAME
 xosd_is_onscreen \- Returns wether the XOSD window is shown
 .SH "SYNOPSIS"
@@ -34,10 +34,10 @@ xosd\ *\fBxosd_is_onscreen\fR\ (xosd\ \fI*osd\fR);
 .SH "DESCRIPTION"
 
 .PP
-\fBosd_is_onscreen\fR determines weather a XOSD window, is currently being shown (is mapped to the X display). Because XOSD displays data asynchronously (see \fBxosd_display\fR(3xosd) for details) it can be difficult to know if data is being displayed, \fBxosd_is_onscreen\fR solves this problem.
+\fBosd_is_onscreen\fR determines weather a XOSD window, is currently being shown (is mapped to the X display). Because XOSD displays data asynchronously (see \fBxosd_display\fR(3) for details) it can be difficult to know if data is being displayed, \fBxosd_is_onscreen\fR solves this problem.
 
 .PP
-Call \fBxosd_show\fR(3xosd) or \fBxosd_hide\fR(3xosd) to alter the visibility of the XOSD window.
+Call \fBxosd_show\fR(3) or \fBxosd_hide\fR(3) to alter the visibility of the XOSD window.
 
 .SH "ARGUMENTS"
 
@@ -48,7 +48,7 @@ The XOSD window to query.
 .SH "RETURN VALUE"
 
 .PP
-A 1 is returned if the window is onscreen (mapped), or 0 if it is hidden (unmapped). On error, -1 is returned and \fIxosd_error\fR is set to indicate the reason for the error.
+A 1 is returned if the window is onscreen (mapped), or 0 if it is hidden (unmapped). On error, \-1 is returned and \fIxosd_error\fR is set to indicate the reason for the error.
 
 .SH "ENVIRONMENT"
 
@@ -75,5 +75,4 @@ Bug reports can be files on http://sourceforge.net/projects/libxosd/.
 .SH "SEE ALSO"
 
 .PP
- \fBxosd_display\fR(3xosd), \fBxosd_show\fR(3xosd), \fBxosd_hide\fR(3xosd)
-
+ \fBxosd_display\fR(3), \fBxosd_show\fR(3), \fBxosd_hide\fR(3).
