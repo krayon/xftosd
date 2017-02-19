@@ -3,3 +3,13 @@
 This is an unofficial mirror of XOSD from:
     https://svn.code.sf.net/p/libxosd/code
 
+== BUILDING ==
+
+{{{
+libtoolize
+aclocal
+autoconf
+automake --add-missing
+./configure
+make
+}}}
