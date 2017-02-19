@@ -108,14 +108,17 @@ else
 fi
 
 dnl Check for xmms
-AM_PATH_XMMS(1.2.7,,
-	     AC_MSG_WARN("xmms plugins can not be built"))
+dnl disabled in Debian because XMMS is not available and we need to
+dnl regenerate configure
+dnl AM_PATH_XMMS(1.2.7,,
+dnl	     AC_MSG_WARN("xmms plugins can not be built"))
 dnl Override where to place libxmms_xosd.so
 AC_ARG_WITH([plugindir],
             AC_HELP_STRING([--with-plugindir=DIR],
 			   [Set the xmms plugin directory]),
             [XMMS_PLUGIN_DIR="$withval"],
             [XMMS_PLUGIN_DIR="$XMMS_GENERAL_PLUGIN_DIR"])
+AC_SUBST(XMMS_PLUGIN_DIR)
 
 dnl Check for gdk-pixbuf
 AM_PATH_GDK_PIXBUF(0.22.0,,
