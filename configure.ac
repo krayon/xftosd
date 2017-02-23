@@ -2,6 +2,9 @@ dnl
 dnl Configure.ac for xosd
 dnl
 
+dnl Keep the correct libtool macros in-tree
+AC_CONFIG_MACRO_DIR([m4])
+
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(xosd, 2.2.16)
 AC_CONFIG_SRCDIR(src/testprog.c)

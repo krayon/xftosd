@@ -1,3 +1,5 @@
+ACLOCAL_AMFLAGS = -I m4
+
 if BUILD_NEW_PLUGIN
 	NEW_SUB = pixmaps
 endif
@@ -13,3 +15,6 @@ aclocaldir	= $(datadir)/aclocal
 aclocal_DATA	= libxosd.m4
 
 EXTRA_DIST = autogen.sh libxosd.m4 xosd.spec xosd.spec.in
+
+README: README.md
+	cp -a README.md README
