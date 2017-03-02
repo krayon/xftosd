@@ -20,3 +20,5 @@ make
 ** s/xosd/xftosd/g
 * Audit
 ** Audit new xft code
+* Bugs
+** When scrolling, text writes over the previous text
