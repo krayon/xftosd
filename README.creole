@@ -16,7 +16,7 @@ make
 
 == TODO ==
 
-* Clean up make process
-** Move pkg-config to proper place (which is?)
 * Rename project
 ** s/xosd/xftosd/g
+* Audit
+** Audit new xft code

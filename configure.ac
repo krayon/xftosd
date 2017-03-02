@@ -134,6 +134,9 @@ AM_CONDITIONAL([BUILD_NEW_PLUGIN],
 	       [test x"$enable_new_plugin" = "xyes" -a x"$no_xmms" != "xyes" -a x"$no_gdk_pixbuf" != "xyes"])
 
 PKG_PROG_PKG_CONFIG
+PKG_CHECK_MODULES([XFT], [xft])
+PKG_CHECK_MODULES([PANGO], [pango])
+PKG_CHECK_MODULES([PANGOXFT], [pangoxft])
 
 dnl Check for Beep Media player
 AC_ARG_ENABLE([beep_media_player_plugin],
