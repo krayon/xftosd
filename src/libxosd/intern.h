@@ -30,6 +30,13 @@
 #  include <X11/extensions/Xinerama.h>
 #endif
 
+/* For pango xft support */
+#include <X11/Xft/Xft.h>
+#include <pango/pango.h>
+#include <pango/pangoxft.h>
+#include <pango/pango-font.h>
+#include <locale.h>
+
 #include "xosd.h"
 
 /* gcc -O2 optimizes debugging away if Dnone is chosen. {{{ */
@@ -149,6 +156,27 @@ struct xosd
 
   int timeout;                  /* CONF delta time */
   struct timeval timeout_start; /* DYN Absolute start of timeout */
+
++/* For pango xft support */
+  XftColor  xftcolour;
+  XftColor  outline_xftcolour;
+  XftColor  shadow_xftcolour;
+  XftColor * draw_xftcolour;
+  enum {
+    XOSD_XFT_NORM = 0,
+    XOSD_XFT_OUTLINE,
+    XOSD_XFT_SHADOW,
+  } xft_font_colour;
+  XftDraw  *xftdrawable;
+  XftDraw  *xftdrawable_msk;
+  PangoContext *pgc;
+  PangoLayout  *plo;
+  PangoFontDescription *pfd;
+  int xftascent;
+  int xftdescent;
+  int xftheight;
+  int x;
+  int y;
 };
 
 static const int XOSD_MAX_PRINTF_BUF_SIZE=2000;

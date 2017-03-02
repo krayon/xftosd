@@ -5,8 +5,8 @@ noinst_PROGRAMS = testprog
 osd_cat_SOURCES  = osd_cat.c
 testprog_SOURCES = testprog.c
 
-osd_cat_LDADD 	= libxosd/libxosd.la
-testprog_LDADD 	= libxosd/libxosd.la
+osd_cat_LDADD 	= libxosd/libxosd.la `pkg-config --libs xft pango pangoxft`
+testprog_LDADD 	= libxosd/libxosd.la `pkg-config --libs xft pango pangoxft`
 
 include_HEADERS = xosd.h
 

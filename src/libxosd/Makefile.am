@@ -1,4 +1,4 @@
-AM_CFLAGS = -I$(top_srcdir)/src
+AM_CFLAGS = -I$(top_srcdir)/src `pkg-config --cflags xft pango pangoxft`
 # Library
 lib_LTLIBRARIES 	= libxosd.la
 libxosd_la_SOURCES 	= xosd.c intern.h

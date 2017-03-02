@@ -13,3 +13,10 @@ automake --add-missing
 ./configure
 make
 }}}
+
+== TODO ==
+
+* Clean up make process
+** Move pkg-config to proper place (which is?)
+* Rename project
+** s/xosd/xftosd/g

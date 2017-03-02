@@ -26,11 +26,14 @@
 #define XOFFSET 10
 
 const char * const osd_default_font =
-  "-misc-fixed-medium-r-semicondensed--*-*-*-*-c-*-*-*";
+  "Sans 8";
 #if 0
 "-adobe-helvetica-bold-r-*-*-10-*";
 #endif
-const char * const osd_default_colour = "green";
+
+const char *osd_default_colour         = "green";
+const char *osd_default_shadow_colour  = "black";
+const char *osd_default_outline_colour = "black";
 
 /** Global error string. */
 const char *xosd_error;
@@ -49,6 +52,28 @@ _wait_until_update(xosd * osd, int generation)
     pthread_cond_wait(&osd->cond_sync, &osd->mutex_sync);
   }
   pthread_mutex_unlock(&osd->mutex_sync);
+}
+
+static Pixmap
+take_snapshot(xosd *osd) {
+  Pixmap pixmap;
+  GC gc;
+
+  /* create a pixmap to hold the screenshot. */
+  pixmap = XCreatePixmap(osd->display, osd->window,
+                         osd->screen_width, osd->height,
+                         osd->depth);
+
+  /* then copy the screen into the pixmap. */
+  gc = XCreateGC(osd->display, pixmap, 0, NULL);
+  XSetSubwindowMode(osd->display, gc, IncludeInferiors);
+  XCopyArea(osd->display, DefaultRootWindow(osd->display), pixmap, gc,
+            osd->x, osd->y, osd->screen_width, osd->height,
+            0, 0);
+  XSetSubwindowMode(osd->display, gc, ClipByChildren);
+  XFreeGC(osd->display, gc);
+
+  return pixmap;
 }
 
 /* }}} */
@@ -116,7 +141,6 @@ _draw_bar(xosd * osd, int nbars, int on, XRectangle * p, XRectangle * mod,
   rs[1].height = mod->height + p->height;
   for (i = 0; i < nbars; i++, rs[0].x = rs[1].x += p->width) {
     XRectangle *r = &(rs[is_slider ? (i == on) : (i < on)]);
-    XFillRectangles(osd->display, osd->mask_bitmap, osd->mask_gc, r, 1);
     XFillRectangles(osd->display, osd->line_bitmap, osd->gc, r, 1);
   }
   FUNCTION_END(Dfunction);
@@ -129,8 +153,8 @@ draw_bar(xosd * osd, int line)
   XRectangle p, m;
   p.x = XOFFSET;
   p.y = osd->line_height * line + osd->margin;
-  p.width = -osd->extent->y / 2;
-  p.height = -osd->extent->y;
+  p.width = osd->xftheight / 2;
+  p.height =  osd->xftheight;
 
   assert(osd);
   FUNCTION_START(Dfunction);
@@ -196,22 +220,41 @@ draw_bar(xosd * osd, int line)
 
 /* }}} */
 
+/* Set (XFT) font colour for given text piece {{{ */
+void
+set_xft_font_colour(xosd * osd, int ind)
+{
+  switch (ind) {
+  case XOSD_XFT_NORM:
+    osd->draw_xftcolour= & (osd ->xftcolour);
+    break;
+  case XOSD_XFT_OUTLINE:
+    osd->draw_xftcolour = & (osd->outline_xftcolour);
+    break;
+  case XOSD_XFT_SHADOW:
+    osd->draw_xftcolour = & (osd->shadow_xftcolour);
+    break;
+  }
+}
+
+/* }}} */
+
 /* Draw text. {{{ */
 static void                     /*inline */
 _draw_text(xosd * osd, char *string, int x, int y)
 {
   int len = strlen(string);
   FUNCTION_START(Dfunction);
-  XmbDrawString(osd->display, osd->mask_bitmap, osd->fontset, osd->mask_gc, x,
-                y, string, len);
-  XmbDrawString(osd->display, osd->line_bitmap, osd->fontset, osd->gc, x, y,
-                string, len);
+  pango_layout_set_text(osd->plo, string, len);
+  pango_xft_render_layout(osd->xftdrawable, osd->draw_xftcolour, osd->plo, x * PANGO_SCALE, y * PANGO_SCALE);
   FUNCTION_END(Dfunction);
 }
+
 static void
 draw_text(xosd * osd, int line)
 {
-  int x = XOFFSET, y = osd->line_height * line - osd->extent->y + osd->margin;
+  //int x = XOFFSET, y = osd->line_height * line + osd->xftdescent;
+  int x = XOFFSET, y = osd->line_height * line;
   struct xosd_text *l = &osd->lines[line].text;
 
   assert(osd);
@@ -221,15 +264,15 @@ draw_text(xosd * osd, int line)
     return;
 
   if (l->width < 0) {
-    XRectangle rect;
-    XmbTextExtents(osd->fontset, l->string, strlen(l->string),
-        &l->bbox_extents, &rect);
+    PangoRectangle r;
+    pango_layout_set_text(osd->plo, l->string, strlen(l->string));
+    pango_layout_get_extents(osd->plo, &r, 0);
     // Define this to draw the bounding box around the physical (ink) extent
     // of the text.  By default, draw around the logical extent.
 #ifndef BBOX_USES_INK_EXTENTS
-    l->bbox_extents = rect;
+    l->bbox_extents = r;
 #endif
-    l->width = rect.width;
+    l->width = r.width / PANGO_SCALE;
   }
 
   switch (osd->align) {
@@ -259,6 +302,7 @@ draw_text(xosd * osd, int line)
   /* Shadow */
   if (osd->shadow_offset) {
     XSetForeground(osd->display, osd->gc, osd->shadow_pixel);
+    set_xft_font_colour(osd, XOSD_XFT_SHADOW);
     _draw_text(osd, l->string, x + osd->shadow_offset,
                y + osd->shadow_offset);
   }
@@ -266,6 +310,7 @@ draw_text(xosd * osd, int line)
   if (osd->outline_offset) {
     int xd,yd;
     XSetForeground(osd->display, osd->gc, osd->outline_pixel);
+    set_xft_font_colour(osd, XOSD_XFT_OUTLINE);
     for (xd = -osd->outline_offset; xd <= osd->outline_offset; xd++)
       for (yd = -osd->outline_offset; yd <= osd->outline_offset; yd++)
         if (xd || yd)
@@ -274,6 +319,7 @@ draw_text(xosd * osd, int line)
   /* Text */
   if (1) {
     XSetForeground(osd->display, osd->gc, osd->pixel);
+    set_xft_font_colour(osd, XOSD_XFT_NORM);
     _draw_text(osd, l->string, x, y);
   }
 }
@@ -327,10 +373,7 @@ event_loop(void *osdv)
     /* The font, outline or shadow was changed. Recalculate line height,
      * resize window and bitmaps. */
     if (osd->update & UPD_size) {
-      XFontSetExtents *extents = XExtentsOfFontSet(osd->fontset);
-      DEBUG(Dupdate, "UPD_size");
-      osd->extent = &extents->max_logical_extent;
-      osd->line_height = osd->extent->height + osd->shadow_offset + 2 *
+      osd->line_height = osd->xftheight  + osd->shadow_offset + 2 *
         osd->margin;
       osd->height = osd->line_height * osd->number_lines;
       for (line = 0; line < osd->number_lines; line++)
@@ -339,13 +382,18 @@ event_loop(void *osdv)
 
       XResizeWindow(osd->display, osd->window, osd->screen_width,
                     osd->height);
-      XFreePixmap(osd->display, osd->mask_bitmap);
-      osd->mask_bitmap = XCreatePixmap(osd->display, osd->window,
-                                       osd->screen_width, osd->height, 1);
       XFreePixmap(osd->display, osd->line_bitmap);
       osd->line_bitmap = XCreatePixmap(osd->display, osd->window,
                                        osd->screen_width, osd->height,
                                        osd->depth);
+      xosd_xypos(osd);
+
+      XCopyArea(osd->display, take_snapshot(osd), osd->line_bitmap, osd->gc,
+                0, 0, osd->screen_width, osd->height, 0, 0);
+
+      osd->xftdrawable = XftDrawCreate(osd->display, osd->line_bitmap, osd->visual, DefaultColormap(osd->display, osd->screen));
+      if(!osd->xftdrawable)
+        printf("error, cannot create drawable\n");
     }
     /* H/V offset or vertical positon was changed. Horizontal alignment is
      * handles internally as line realignment with UPD_content. */
@@ -370,6 +418,7 @@ event_loop(void *osdv)
       case XOSD_top:
         y = osd->voffset;
       }
+      osd->x = x; osd->y = y;
       XMoveWindow(osd->display, osd->window, x, y);
     }
     /* If the content changed, redraw lines in background buffer.
@@ -383,10 +432,6 @@ event_loop(void *osdv)
         XFillRectangle(osd->display, osd->line_bitmap, osd->gc, 0,
                        y, osd->screen_width, osd->line_height);
 #endif
-        if (osd->update & UPD_mask) {
-          XFillRectangle(osd->display, osd->mask_bitmap, osd->mask_gc_back, 0,
-                         y, osd->screen_width, osd->line_height);
-        }
         switch (osd->lines[line].type) {
         case LINE_text:
           draw_text(osd, line);
@@ -401,11 +446,6 @@ event_loop(void *osdv)
     }
 #ifndef DEBUG_XSHAPE
     /* More than colours was changed, also update XShape. */
-    if (osd->update & UPD_mask) {
-      DEBUG(Dupdate, "UPD_mask");
-      XShapeCombineMask(osd->display, osd->window, ShapeBounding, 0, 0,
-                        osd->mask_bitmap, ShapeSet);
-    }
 #endif
     /* Show display requested. */
     if (osd->update & UPD_show) {
@@ -540,6 +580,22 @@ event_loop(void *osdv)
 
 /* }}} */
 
+/* Parse (XFT) textual colour value. {{{ */
+static int parse_xft_colour(xosd * osd, XftColor * color, unsigned long *pixel, const char *colorstr){
+  Colormap cmap = DefaultColormap(osd->display, osd->screen);
+  int retval = 0;
+
+ if(!XftColorAllocName(osd->display, osd->visual, cmap, colorstr, color)){
+    printf("error, cannot allocate color '%s'\n", colorstr);
+    retval = -1;
+  } else
+    retval = 0;
+  *pixel = color->pixel;
+  return retval;
+}
+
+/* }}} */
+
 /* Parse textual colour value. {{{ */
 static int
 parse_colour(xosd * osd, XColor * col, unsigned long *pixel,
@@ -645,6 +701,38 @@ stay_on_top(Display * dpy, Window win)
     XFree(args);
   }
   XRaiseWindow(dpy, win);
+}
+
+/* }}} */
+
+/* Calculate the X/Y text position. {{{ */
+void xosd_xypos(xosd *osd)
+{
+  int x,y;
+
+  switch (osd->align) {
+    case XOSD_left:
+    case XOSD_center:
+      x = osd->screen_xpos + osd->hoffset;
+      break;
+
+    case XOSD_right:
+      x = osd->screen_xpos - osd->hoffset;
+  }
+
+  switch (osd->pos) {
+    case XOSD_bottom:
+      y = osd->screen_height - osd->height - osd->voffset;
+      break;
+
+    case XOSD_middle:
+      y = ((osd->screen_height - osd->height) / 2) - osd->voffset;
+      break;
+
+    case XOSD_top:
+      y = osd->voffset;
+  }
+  osd->x = x; osd->y = y;
 }
 
 /* }}} */
@@ -774,13 +862,6 @@ xosd_create_xinerama(int number_lines, int xinerama_screen)
 
   DEBUG(Dtrace, "font selection info");
   xosd_set_font(osd, osd_default_font);
-  if (osd->fontset == NULL) {
-    /*
-     * if we still don't have a fontset, then abort 
-     */
-    xosd_error = "Default font not found";
-    goto error3;
-  }
 
   DEBUG(Dtrace, "width and height initialization");
 #ifdef HAVE_XINERAMA
@@ -818,33 +899,20 @@ xosd_create_xinerama(int number_lines, int xinerama_screen)
                               osd->visual, CWOverrideRedirect, &setwinattr);
   XStoreName(osd->display, osd->window, "XOSD");
 
-  osd->mask_bitmap =
-    XCreatePixmap(osd->display, osd->window, osd->screen_width,
-                  osd->height, 1);
   osd->line_bitmap =
     XCreatePixmap(osd->display, osd->window, osd->screen_width,
                   osd->line_height, osd->depth);
 
   osd->gc = XCreateGC(osd->display, osd->window, GCGraphicsExposures, &xgcv);
-  osd->mask_gc = XCreateGC(osd->display, osd->mask_bitmap, GCGraphicsExposures, &xgcv);
-  osd->mask_gc_back = XCreateGC(osd->display, osd->mask_bitmap, GCGraphicsExposures, &xgcv);
 
-  XSetBackground(osd->display, osd->gc,
-                 WhitePixel(osd->display, osd->screen));
-
-  XSetForeground(osd->display, osd->mask_gc_back,
-                 BlackPixel(osd->display, osd->screen));
-  XSetBackground(osd->display, osd->mask_gc_back,
-                 WhitePixel(osd->display, osd->screen));
-
-  XSetForeground(osd->display, osd->mask_gc,
-                 WhitePixel(osd->display, osd->screen));
-  XSetBackground(osd->display, osd->mask_gc,
-                 BlackPixel(osd->display, osd->screen));
-
+  osd->xftdrawable = XftDrawCreate(osd->display, osd->line_bitmap, osd->visual, DefaultColormap(osd->display, osd->screen));
+  if(!osd->xftdrawable)
+     printf("error, cannot create drawable\n");
 
   DEBUG(Dtrace, "setting colour");
-  xosd_set_colour(osd, osd_default_colour);
+  xosd_set_colour(        osd, osd_default_colour);
+  xosd_set_shadow_colour( osd, osd_default_shadow_colour);
+  xosd_set_outline_colour(osd, osd_default_outline_colour);
 
   DEBUG(Dtrace, "stay on top");
   stay_on_top(osd->display, osd->window);
@@ -904,11 +972,7 @@ xosd_destroy(xosd * osd)
 
   DEBUG(Dtrace, "freeing X resources");
   XFreeGC(osd->display, osd->gc);
-  XFreeGC(osd->display, osd->mask_gc);
-  XFreeGC(osd->display, osd->mask_gc_back);
   XFreePixmap(osd->display, osd->line_bitmap);
-  XFreeFontSet(osd->display, osd->fontset);
-  XFreePixmap(osd->display, osd->mask_bitmap);
   XDestroyWindow(osd->display, osd->window);
 
   XCloseDisplay(osd->display);
@@ -1081,6 +1145,7 @@ xosd_set_colour(xosd * osd, const char *colour)
     return -1;
 
   _xosd_lock(osd);
+  retval = parse_xft_colour(osd, &osd->xftcolour, &osd->pixel, colour);
   retval = parse_colour(osd, &osd->colour, &osd->pixel, colour);
   osd->update |= UPD_lines;
   _xosd_unlock(osd);
@@ -1101,6 +1166,7 @@ xosd_set_shadow_colour(xosd * osd, const char *colour)
     return -1;
 
   _xosd_lock(osd);
+  retval = parse_xft_colour(osd, &osd->shadow_xftcolour, &osd->shadow_pixel, colour);
   retval = parse_colour(osd, &osd->shadow_colour, &osd->shadow_pixel, colour);
   osd->update |= UPD_lines;
   _xosd_unlock(osd);
@@ -1121,6 +1187,7 @@ xosd_set_outline_colour(xosd * osd, const char *colour)
     return -1;
 
   _xosd_lock(osd);
+  retval = parse_xft_colour(osd, &osd->outline_xftcolour, &osd->pixel, colour);
   retval =
     parse_colour(osd, &osd->outline_colour, &osd->outline_pixel, colour);
   osd->update |= UPD_lines;
@@ -1173,17 +1240,20 @@ xosd_set_font(xosd * osd, const char *font)
    * Try to create the new font. If it doesn't succeed, keep old font. 
    */
   _xosd_lock(osd);
-  fontset2 = XCreateFontSet(osd->display, font, &missing, &nmissing, &defstr);
-  XFreeStringList(missing);
-  if (fontset2 == NULL) {
-    xosd_error = "Requested font not found";
-    ret = -1;
-  } else {
-    if (osd->fontset != NULL)
-      XFreeFontSet(osd->display, osd->fontset);
-    osd->fontset = fontset2;
-    osd->update |= UPD_font;
-  }
+
+  PangoFontMetrics *metrics;
+  osd->pgc = pango_xft_get_context(osd->display, osd->screen);
+  osd->pfd = pango_font_description_from_string(font);
+  osd->update |= UPD_font;
+
+  metrics = pango_context_get_metrics(osd->pgc, osd->pfd, pango_language_from_string(setlocale(LC_CTYPE, "")));
+  osd->plo = pango_layout_new(osd->pgc);
+  pango_layout_set_font_description(osd->plo, osd->pfd);
+
+  osd->xftascent = pango_font_metrics_get_ascent(metrics) / PANGO_SCALE ;
+  osd->xftdescent = pango_font_metrics_get_descent(metrics) / PANGO_SCALE ;
+  osd->xftheight = osd->xftascent + osd->xftdescent;
+
   _xosd_unlock(osd);
 
   return ret;
