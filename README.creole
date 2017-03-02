@@ -1,7 +1,7 @@
-= XOSD =
+= XftOSD =
 
-This is an unofficial mirror of XOSD from:
-    https://svn.code.sf.net/p/libxosd/code
+This is a fork of XOSD ( https://svn.code.sf.net/p/libxosd/code ), adding
+support for X FreeType fonts.
 
 == BUILDING ==
 
