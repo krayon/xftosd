@@ -25,8 +25,7 @@
 #define SLIDER_SCALE_ON 0.7
 #define XOFFSET 10
 
-const char * const osd_default_font =
-  "Sans 8";
+const char * osd_default_font = "Sans 8";
 #if 0
 "-adobe-helvetica-bold-r-*-*-10-*";
 #endif
@@ -37,10 +36,6 @@ const char *osd_default_outline_colour = "black";
 
 /** Global error string. */
 const char *xosd_error;
-
-/** Helper function. */
-static int MIN(const int a, const int b) { return a < b ? a : b; }
-static int MAX(const int a, const int b) { return a > b ? a : b; }
 
 /* Wait until display is in next state. {{{ */
 static void
@@ -270,7 +265,14 @@ draw_text(xosd * osd, int line)
     // Define this to draw the bounding box around the physical (ink) extent
     // of the text.  By default, draw around the logical extent.
 #ifndef BBOX_USES_INK_EXTENTS
-    l->bbox_extents = r;
+    XRectangle bboxrect;
+
+    bboxrect.x      = r.x;
+    bboxrect.y      = r.y;
+    bboxrect.width  = r.width;
+    bboxrect.height = r.height;
+
+    l->bbox_extents = bboxrect;
 #endif
     l->width = r.width / PANGO_SCALE;
   }
@@ -322,6 +324,38 @@ draw_text(xosd * osd, int line)
     set_xft_font_colour(osd, XOSD_XFT_NORM);
     _draw_text(osd, l->string, x, y);
   }
+}
+
+/* }}} */
+
+/* Calculate the X/Y text position. {{{ */
+void xosd_xypos(xosd *osd)
+{
+  int x = 0, y = 0;
+
+  switch (osd->align) {
+    case XOSD_left:
+    case XOSD_center:
+      x = osd->screen_xpos + osd->hoffset;
+      break;
+
+    case XOSD_right:
+      x = osd->screen_xpos - osd->hoffset;
+  }
+
+  switch (osd->pos) {
+    case XOSD_bottom:
+      y = osd->screen_height - osd->height - osd->voffset;
+      break;
+
+    case XOSD_middle:
+      y = ((osd->screen_height - osd->height) / 2) - osd->voffset;
+      break;
+
+    case XOSD_top:
+      y = osd->voffset;
+  }
+  osd->x = x; osd->y = y;
 }
 
 /* }}} */
@@ -426,8 +460,8 @@ event_loop(void *osdv)
     if (osd->update & (UPD_mask | UPD_lines)) {
       DEBUG(Dupdate, "UPD_lines");
       for (line = 0; line < osd->number_lines; line++) {
-        int y = osd->line_height * line;
 #ifdef DEBUG_XSHAPE
+        int y = osd->line_height * line;
         XSetForeground(osd->display, osd->gc, osd->outline_pixel);
         XFillRectangle(osd->display, osd->line_bitmap, osd->gc, 0,
                        y, osd->screen_width, osd->line_height);
@@ -701,38 +735,6 @@ stay_on_top(Display * dpy, Window win)
     XFree(args);
   }
   XRaiseWindow(dpy, win);
-}
-
-/* }}} */
-
-/* Calculate the X/Y text position. {{{ */
-void xosd_xypos(xosd *osd)
-{
-  int x,y;
-
-  switch (osd->align) {
-    case XOSD_left:
-    case XOSD_center:
-      x = osd->screen_xpos + osd->hoffset;
-      break;
-
-    case XOSD_right:
-      x = osd->screen_xpos - osd->hoffset;
-  }
-
-  switch (osd->pos) {
-    case XOSD_bottom:
-      y = osd->screen_height - osd->height - osd->voffset;
-      break;
-
-    case XOSD_middle:
-      y = ((osd->screen_height - osd->height) / 2) - osd->voffset;
-      break;
-
-    case XOSD_top:
-      y = osd->voffset;
-  }
-  osd->x = x; osd->y = y;
 }
 
 /* }}} */
@@ -1224,10 +1226,6 @@ xosd_set_bbox_colour(xosd * osd, const char *colour)
 int
 xosd_set_font(xosd * osd, const char *font)
 {
-  XFontSet fontset2;
-  char **missing;
-  int nmissing;
-  char *defstr;
   int ret = 0;
 
   FUNCTION_START(Dfunction);

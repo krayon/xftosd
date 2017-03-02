@@ -157,7 +157,7 @@ struct xosd
   int timeout;                  /* CONF delta time */
   struct timeval timeout_start; /* DYN Absolute start of timeout */
 
-+/* For pango xft support */
+/* For pango xft support */
   XftColor  xftcolour;
   XftColor  outline_xftcolour;
   XftColor  shadow_xftcolour;

@@ -19,6 +19,8 @@ extern "C"
   extern const char *xosd_error;
   extern const char *osd_default_font;
   extern const char *osd_default_colour;
+  extern const char *osd_default_shadow_colour;
+  extern const char *osd_default_outline_colour;
 
 /* The XOSD display "object" */
   typedef struct xosd xosd;
